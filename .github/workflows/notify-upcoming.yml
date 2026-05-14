@@ -1,0 +1,63 @@
+name: Notify Upcoming Events
+
+on:
+  workflow_dispatch:
+    inputs:
+      TEST_MODE:
+        description: '時間制限なしで次のイベントを送信'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Send X match upcoming
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          TEST_MODE: ${{ github.event.inputs.TEST_MODE || 'false' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node src/notify-upcoming.mjs
+      - name: Send bankara upcoming
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          TEST_MODE: ${{ github.event.inputs.TEST_MODE || 'false' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node src/notify-bankara-upcoming.mjs
+      - name: Send regular upcoming
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          TEST_MODE: ${{ github.event.inputs.TEST_MODE || 'false' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node src/notify-regular-upcoming.mjs
+      - name: Send event upcoming
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          TEST_MODE: ${{ github.event.inputs.TEST_MODE || 'false' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node src/notify-event-upcoming.mjs
+      - name: Send fest upcoming
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          TEST_MODE: ${{ github.event.inputs.TEST_MODE || 'false' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node src/notify-fest-upcoming.mjs
+      - name: Send salmon run upcoming
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          TEST_MODE: ${{ github.event.inputs.TEST_MODE || 'false' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node src/notify-salmon.mjs

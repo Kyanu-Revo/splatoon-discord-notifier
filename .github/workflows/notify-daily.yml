@@ -1,0 +1,46 @@
+name: Daily Schedules
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Send X match daily
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node src/notify-daily.mjs
+      - name: Send bankara daily
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node src/notify-bankara-daily.mjs
+      - name: Send regular daily
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node src/notify-regular-daily.mjs
+      - name: Send event daily
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node src/notify-event-daily.mjs
+      - name: Send fest daily
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node src/notify-fest-daily.mjs
