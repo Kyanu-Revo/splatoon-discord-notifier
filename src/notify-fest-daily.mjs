@@ -1,6 +1,5 @@
-import { toJSTDate, formatTimeJST, getDayWindow, fetchSchedule, sendEmbed, deleteMessage, loadIds, saveIds } from './utils.mjs';
+import { toJSTDate, formatTimeJST, getDayWindow, fetchSchedule, sendEmbed, clearChannelBefore } from './utils.mjs';
 
-const TRACKING_PATH = 'data/fest-message-ids.json';
 const config = JSON.parse(process.env.DISCORD_CONFIG);
 const fest = config.fest;
 
@@ -37,16 +36,11 @@ if (openEntries.length === 0 && challengeEntries.length === 0) {
   process.exit(0);
 }
 
-const prev = await loadIds(TRACKING_PATH);
-if (prev.daily) await deleteMessage(fest.webhook, prev.daily);
-for (const id of (prev.upcoming || [])) await deleteMessage(fest.webhook, id);
-
 const todayLabel = nowJST.toLocaleDateString('ja-JP', {
   timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short',
 });
 
 const descLines = [todayLabel, ''];
-
 for (const e of challengeEntries) {
   descLines.push(`${formatTimeJST(e.startTime)}〜 チャレンジ`);
   descLines.push(e.stages);
@@ -73,5 +67,5 @@ const newId = await sendEmbed(fest.webhook, {
   }],
 });
 
-await saveIds({ daily: newId }, TRACKING_PATH);
+if (newId) await clearChannelBefore(fest.channelId, newId, config.botToken);
 console.log('フェスデイリー通知完了');

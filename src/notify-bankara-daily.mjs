@@ -1,6 +1,5 @@
-import { toJSTDate, formatTimeJST, getDayWindow, fetchSchedule, sendEmbed, deleteMessage, loadIds, saveIds } from './utils.mjs';
+import { toJSTDate, formatTimeJST, getDayWindow, fetchSchedule, sendEmbed, clearChannelBefore } from './utils.mjs';
 
-const TRACKING_PATH = 'data/bankara-message-ids.json';
 const config = JSON.parse(process.env.DISCORD_CONFIG);
 const bankara = config.bankara;
 
@@ -12,10 +11,6 @@ const RULE_EMOJI = {
   'ガチホコバトル': '<:Rhoko:1504326737780015196>',
   'ガチアサリ':    '<:Rasari:1504326606758481931>',
 };
-
-const prev = await loadIds(TRACKING_PATH);
-if (prev.daily) await deleteMessage(bankara.webhook, prev.daily);
-for (const id of (prev.upcoming || [])) await deleteMessage(bankara.webhook, id);
 
 const now = new Date();
 const nowJST = toJSTDate(now);
@@ -62,5 +57,5 @@ const newId = await sendEmbed(bankara.webhook, {
   }],
 });
 
-await saveIds({ daily: newId, upcoming: [] }, TRACKING_PATH);
+if (newId) await clearChannelBefore(bankara.channelId, newId, config.botToken);
 console.log('バンカラデイリー通知完了');

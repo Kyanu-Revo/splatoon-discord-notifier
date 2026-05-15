@@ -8,8 +8,6 @@ const RULE_EMOJI = {
   'ガチホコバトル': '<:Rhoko:1504326737780015196>',
   'ガチアサリ':    '<:Rasari:1504326606758481931>',
 };
-const TRACKING_PATH = 'data/message-ids.json';
-
 function toDisplayName(name) {
   return name.replace('ガチホコバトル', 'ガチホコ');
 }
@@ -41,46 +39,6 @@ async function sendToDiscord(webhookUrl, content) {
     }
   }
   return null;
-}
-
-async function loadIds() {
-  const token = process.env.GITHUB_TOKEN;
-  const repo = process.env.GITHUB_REPOSITORY;
-  if (!token || !repo) return { daily: {}, upcoming: {} };
-
-  const res = await fetch(`https://api.github.com/repos/${repo}/contents/${TRACKING_PATH}`, {
-    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' },
-  });
-  if (!res.ok) return { daily: {}, upcoming: {} };
-  const file = await res.json();
-  return JSON.parse(Buffer.from(file.content, 'base64').toString('utf-8'));
-}
-
-async function saveIds(data) {
-  const token = process.env.GITHUB_TOKEN;
-  const repo = process.env.GITHUB_REPOSITORY;
-  if (!token || !repo) return;
-
-  const headers = {
-    'Authorization': `Bearer ${token}`,
-    'Accept': 'application/vnd.github+json',
-    'Content-Type': 'application/json',
-  };
-
-  const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${TRACKING_PATH}`, { headers });
-  const sha = getRes.ok ? (await getRes.json()).sha : undefined;
-
-  const content = Buffer.from(JSON.stringify(data)).toString('base64');
-  const body = { message: 'chore: update message ids [skip ci]', content, ...(sha && { sha }) };
-
-  const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${TRACKING_PATH}`, {
-    method: 'PUT', headers, body: JSON.stringify(body),
-  });
-  if (putRes.ok) {
-    console.log('メッセージID保存完了');
-  } else {
-    console.error(`メッセージID保存失敗: ${putRes.status} ${await putRes.text()}`);
-  }
 }
 
 const res = await fetch(API_URL, { headers: { 'user-agent': 'splatoon-discord-notifier' } });
@@ -122,12 +80,4 @@ const mentions = [modeConfig.fixedRole, timeRole].filter(Boolean).join(' ');
 
 console.log(`通知: ${upcoming.name} (${timeLabel})`);
 const content = `${mentions}\nもうすぐ ${toDisplayName(upcoming.name)} の時間です！`;
-const messageId = await sendToDiscord(modeConfig.webhook, content);
-
-if (messageId) {
-  const prevData = await loadIds();
-  const upcoming_ids = prevData.upcoming || {};
-  if (!upcoming_ids[upcoming.rule]) upcoming_ids[upcoming.rule] = [];
-  upcoming_ids[upcoming.rule].push(messageId);
-  await saveIds({ ...prevData, upcoming: upcoming_ids });
-}
+await sendToDiscord(modeConfig.webhook, content);

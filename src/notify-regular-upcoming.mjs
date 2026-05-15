@@ -1,6 +1,5 @@
-import { getTimeSlotLabel, fetchSchedule, sendEmbed, loadIds, saveIds } from './utils.mjs';
+import { getTimeSlotLabel, fetchSchedule, sendEmbed } from './utils.mjs';
 
-const TRACKING_PATH = 'data/regular-message-ids.json';
 const config = JSON.parse(process.env.DISCORD_CONFIG);
 const regular = config.regular;
 
@@ -26,10 +25,4 @@ const stages = `${next.stages[0].name} / ${next.stages[1].name}`;
 const content = [mentions, `次のレギュラーマッチのステージ`, stages].filter(Boolean).join('\n');
 
 console.log(`通知: ナワバリ (${timeLabel})`);
-const messageId = await sendEmbed(regular.webhook, { content });
-
-if (messageId) {
-  const prev = await loadIds(TRACKING_PATH);
-  const upcoming = [...(prev.upcoming || []), messageId];
-  await saveIds({ ...prev, upcoming }, TRACKING_PATH);
-}
+await sendEmbed(regular.webhook, { content });

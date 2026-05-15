@@ -1,4 +1,4 @@
-import { fetchCoopSchedule, sendEmbed, deleteMessage, loadIds, saveIds } from './utils.mjs';
+import { fetchCoopSchedule, sendEmbed, deleteMessages, loadIds, saveIds } from './utils.mjs';
 
 const TRACKING_PATH = 'data/salmon-message-ids.json';
 const config = JSON.parse(process.env.DISCORD_CONFIG);
@@ -28,7 +28,7 @@ const next = shifts
 if (!next) { console.log('通知対象なし'); process.exit(0); }
 
 const prev = await loadIds(TRACKING_PATH);
-if (prev.last) await deleteMessage(salmon.webhook, prev.last);
+await deleteMessages(salmon.channelId, [prev.last], config.botToken);
 
 const isBigRun = next.is_big_run;
 const weapons = next.weapons.map(w => w.name).join(' / ');

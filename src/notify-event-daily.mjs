@@ -1,14 +1,9 @@
-import { toJSTDate, formatTimeJST, getDayWindow, fetchSchedule, sendEmbed, deleteMessage, loadIds, saveIds } from './utils.mjs';
+import { toJSTDate, formatTimeJST, getDayWindow, fetchSchedule, sendEmbed, clearChannelBefore } from './utils.mjs';
 
-const TRACKING_PATH = 'data/event-message-ids.json';
 const config = JSON.parse(process.env.DISCORD_CONFIG);
 const event = config.event;
 
 if (!event) { console.log('イベント設定なし'); process.exit(0); }
-
-const prev = await loadIds(TRACKING_PATH);
-if (prev.daily) await deleteMessage(event.webhook, prev.daily);
-for (const id of (prev.upcoming || [])) await deleteMessage(event.webhook, id);
 
 const now = new Date();
 const nowJST = toJSTDate(now);
@@ -50,5 +45,5 @@ const newId = await sendEmbed(event.webhook, {
   }],
 });
 
-await saveIds({ daily: newId, upcoming: [] }, TRACKING_PATH);
+if (newId) await clearChannelBefore(event.channelId, newId, config.botToken);
 console.log('イベントデイリー通知完了');

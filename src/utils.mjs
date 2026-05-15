@@ -66,6 +66,61 @@ export async function deleteMessage(webhookUrl, messageId) {
   if (!res.ok && res.status !== 404) console.error(`削除失敗: ${res.status}`);
 }
 
+export async function clearChannelBefore(channelId, beforeId, botToken) {
+  const headers = { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' };
+  const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  let before = beforeId;
+  while (true) {
+    const res = await fetch(
+      `https://discord.com/api/v10/channels/${channelId}/messages?before=${before}&limit=100`,
+      { headers: { Authorization: `Bot ${botToken}` } }
+    );
+    if (!res.ok) {
+      console.error(`メッセージ取得失敗 [channel=${channelId}]: ${res.status} ${await res.text()}`);
+      break;
+    }
+    const messages = await res.json();
+    if (!messages.length) break;
+    const recent = messages.filter(m => Number(BigInt(m.id) >> 22n) + 1420070400000 > twoWeeksAgo).map(m => m.id);
+    const old    = messages.filter(m => Number(BigInt(m.id) >> 22n) + 1420070400000 <= twoWeeksAgo).map(m => m.id);
+    if (recent.length >= 2) {
+      const delRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/bulk-delete`, {
+        method: 'POST', headers, body: JSON.stringify({ messages: recent }),
+      });
+      if (!delRes.ok) console.error(`一括削除失敗 [channel=${channelId}]: ${delRes.status} ${await delRes.text()}`);
+      else console.log(`一括削除: ${recent.length}件 [channel=${channelId}]`);
+    } else if (recent.length === 1) {
+      const delRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${recent[0]}`, { method: 'DELETE', headers });
+      if (!delRes.ok) console.error(`削除失敗 [channel=${channelId}]: ${delRes.status}`);
+    }
+    for (const id of old) {
+      await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${id}`, { method: 'DELETE', headers });
+    }
+    if (messages.length < 100) break;
+    before = messages[messages.length - 1].id;
+  }
+}
+
+export async function deleteMessages(channelId, messageIds, botToken) {
+  const ids = messageIds.filter(Boolean);
+  if (ids.length === 0) return;
+  const headers = {
+    Authorization: `Bot ${botToken}`,
+    'Content-Type': 'application/json',
+  };
+  if (ids.length === 1) {
+    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${ids[0]}`, {
+      method: 'DELETE', headers,
+    });
+    if (!res.ok && res.status !== 404) console.error(`削除失敗: ${res.status}`);
+    return;
+  }
+  const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/bulk-delete`, {
+    method: 'POST', headers, body: JSON.stringify({ messages: ids }),
+  });
+  if (!res.ok) console.error(`一括削除失敗: ${res.status} ${await res.text()}`);
+}
+
 export async function loadIds(path) {
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPOSITORY;

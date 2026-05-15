@@ -1,3 +1,5 @@
+import { clearChannelBefore } from './utils.mjs';
+
 const API_URL = 'https://spla3.yuu26.com/api/x/schedule';
 const config = JSON.parse(process.env.DISCORD_CONFIG);
 
@@ -22,8 +24,6 @@ const RULE_EMOJI_ID = {
   'ガチホコバトル': '1504326737780015196',
   'ガチアサリ':    '1504326606758481931',
 };
-
-const TRACKING_PATH = 'data/message-ids.json';
 
 function toJSTDate(date) {
   return new Date(date.getTime() + 9 * 60 * 60 * 1000);
@@ -65,72 +65,6 @@ async function sendToDiscord(webhookUrl, payload) {
   return null;
 }
 
-async function deleteMessage(webhookUrl, messageId) {
-  if (!messageId) return;
-  const base = webhookUrl.split('?')[0];
-  const res = await fetch(`${base}/messages/${messageId}`, { method: 'DELETE' });
-  if (res.ok || res.status === 404) {
-    console.log(`削除成功 (ID: ${messageId})`);
-  } else {
-    console.error(`削除失敗: ${res.status}`);
-  }
-}
-
-async function loadIds() {
-  const token = process.env.GITHUB_TOKEN;
-  const repo = process.env.GITHUB_REPOSITORY;
-  if (!token || !repo) return { daily: {}, upcoming: {} };
-
-  const res = await fetch(`https://api.github.com/repos/${repo}/contents/${TRACKING_PATH}`, {
-    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' },
-  });
-  if (!res.ok) return { daily: {}, upcoming: {} };
-  const file = await res.json();
-  return JSON.parse(Buffer.from(file.content, 'base64').toString('utf-8'));
-}
-
-async function saveIds(data) {
-  const token = process.env.GITHUB_TOKEN;
-  const repo = process.env.GITHUB_REPOSITORY;
-  if (!token || !repo) return;
-
-  const headers = {
-    'Authorization': `Bearer ${token}`,
-    'Accept': 'application/vnd.github+json',
-    'Content-Type': 'application/json',
-  };
-
-  const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${TRACKING_PATH}`, { headers });
-  const sha = getRes.ok ? (await getRes.json()).sha : undefined;
-
-  const content = Buffer.from(JSON.stringify(data)).toString('base64');
-  const body = { message: 'chore: update message ids [skip ci]', content, ...(sha && { sha }) };
-
-  const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${TRACKING_PATH}`, {
-    method: 'PUT', headers, body: JSON.stringify(body),
-  });
-  if (putRes.ok) {
-    console.log('メッセージID保存完了');
-  } else {
-    console.error(`メッセージID保存失敗: ${putRes.status} ${await putRes.text()}`);
-  }
-}
-
-// 前回のメッセージIDを取得して削除
-const prevData = await loadIds();
-const prevIds = prevData.daily || {};
-const prevUpcomingIds = prevData.upcoming || {};
-
-if (prevIds.daily) await deleteMessage(config.daily.webhook, prevIds.daily);
-for (const rule of VALID_RULES) {
-  if (prevIds[rule] && config.modes[rule]) {
-    await deleteMessage(config.modes[rule].webhook, prevIds[rule]);
-  }
-  for (const id of (prevUpcomingIds[rule] || [])) {
-    if (config.modes[rule]) await deleteMessage(config.modes[rule].webhook, id);
-  }
-}
-
 // スケジュール取得
 const res = await fetch(API_URL, { headers: { 'user-agent': 'splatoon-discord-notifier' } });
 const data = await res.json();
@@ -166,8 +100,6 @@ for (const rule of VALID_RULES) {
   grouped[rule].sort((a, b) => a.startTime - b.startTime);
 }
 
-const newIds = {};
-
 // ① デイリーwebhook：時間順まとめ
 const allEntries = [];
 for (const rule of VALID_RULES) {
@@ -182,7 +114,7 @@ for (const e of allEntries) {
   descLines.push('');
 }
 
-newIds.daily = await sendToDiscord(config.daily.webhook, {
+const dailyId = await sendToDiscord(config.daily.webhook, {
   content: [config.daily.role, '本日のXマッチスケジュール'].filter(Boolean).join('\n'),
   embeds: [{
     description: descLines.join('\n').trimEnd(),
@@ -190,6 +122,7 @@ newIds.daily = await sendToDiscord(config.daily.webhook, {
     footer: { text: 'Xマッチ スケジュール' },
   }],
 });
+if (dailyId) await clearChannelBefore(config.daily.channelId, dailyId, config.botToken);
 
 // ② 各モードのwebhook：個別送信
 for (const rule of VALID_RULES) {
@@ -204,7 +137,7 @@ for (const rule of VALID_RULES) {
   }));
   if (fields.length % 2 !== 0) fields.push({ name: '​', value: '​', inline: true });
 
-  newIds[rule] = await sendToDiscord(modeConfig.webhook, {
+  const modeId = await sendToDiscord(modeConfig.webhook, {
     content: [modeConfig.fixedRole, `本日の${toDisplayName(rule)}スケジュール`].filter(Boolean).join('\n'),
     embeds: [{
       description: `${todayLabel}`,
@@ -215,9 +148,9 @@ for (const rule of VALID_RULES) {
       footer: { text: 'Xマッチ スケジュール' },
     }],
   });
+  if (modeId) await clearChannelBefore(modeConfig.channelId, modeId, config.botToken);
 
   await new Promise(r => setTimeout(r, 500));
 }
 
-await saveIds({ daily: newIds, upcoming: {} });
 console.log('デイリー通知完了');

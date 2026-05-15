@@ -1,6 +1,5 @@
-import { toJSTDate, getTimeSlotLabel, fetchSchedule, sendEmbed, loadIds, saveIds } from './utils.mjs';
+import { toJSTDate, getTimeSlotLabel, fetchSchedule, sendEmbed } from './utils.mjs';
 
-const TRACKING_PATH = 'data/bankara-message-ids.json';
 const config = JSON.parse(process.env.DISCORD_CONFIG);
 const bankara = config.bankara;
 
@@ -36,10 +35,4 @@ const content = [
 ].filter(Boolean).join('\n');
 
 console.log(`通知: バンカラ (${timeLabel})`);
-const messageId = await sendEmbed(bankara.webhook, { content });
-
-if (messageId) {
-  const prev = await loadIds(TRACKING_PATH);
-  const upcoming = [...(prev.upcoming || []), messageId];
-  await saveIds({ ...prev, upcoming }, TRACKING_PATH);
-}
+await sendEmbed(bankara.webhook, { content });

@@ -1,14 +1,9 @@
-import { toJSTDate, formatTimeJST, getDayWindow, fetchSchedule, sendEmbed, deleteMessage, loadIds, saveIds } from './utils.mjs';
+import { toJSTDate, formatTimeJST, getDayWindow, fetchSchedule, sendEmbed, clearChannelBefore } from './utils.mjs';
 
-const TRACKING_PATH = 'data/regular-message-ids.json';
 const config = JSON.parse(process.env.DISCORD_CONFIG);
 const regular = config.regular;
 
 if (!regular) { console.log('ナワバリ設定なし'); process.exit(0); }
-
-const prev = await loadIds(TRACKING_PATH);
-if (prev.daily) await deleteMessage(regular.webhook, prev.daily);
-for (const id of (prev.upcoming || [])) await deleteMessage(regular.webhook, id);
 
 const now = new Date();
 const nowJST = toJSTDate(now);
@@ -42,5 +37,5 @@ const newId = await sendEmbed(regular.webhook, {
   }],
 });
 
-await saveIds({ daily: newId, upcoming: [] }, TRACKING_PATH);
+if (newId) await clearChannelBefore(regular.channelId, newId, config.botToken);
 console.log('ナワバリデイリー通知完了');

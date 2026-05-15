@@ -1,6 +1,5 @@
-import { fetchSchedule, sendEmbed, loadIds, saveIds } from './utils.mjs';
+import { fetchSchedule, sendEmbed } from './utils.mjs';
 
-const TRACKING_PATH = 'data/fest-message-ids.json';
 const config = JSON.parse(process.env.DISCORD_CONFIG);
 const fest = config.fest;
 
@@ -52,10 +51,4 @@ if (nextTricolor) {
 const content = lines.filter(Boolean).join('\n');
 
 console.log('通知: フェスマッチ');
-const messageId = await sendEmbed(fest.webhook, { content });
-
-if (messageId) {
-  const prev = await loadIds(TRACKING_PATH);
-  const upcoming = [...(prev.upcoming || []), messageId];
-  await saveIds({ ...prev, upcoming }, TRACKING_PATH);
-}
+await sendEmbed(fest.webhook, { content });
