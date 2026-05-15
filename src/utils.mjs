@@ -2,11 +2,13 @@ export function toJSTDate(date) {
   return new Date(date.getTime() + 9 * 60 * 60 * 1000);
 }
 
-export function formatTimeJST(date) {
+export function formatTimeJST(date, refDateStr) {
   const jst = toJSTDate(date);
   const hour = jst.getUTCHours();
   const min = String(jst.getUTCMinutes()).padStart(2, '0');
-  const prefix = hour < 9 ? '翌' : '';
+  const prefix = refDateStr
+    ? (jst.toISOString().slice(0, 10) > refDateStr ? '翌' : '')
+    : (hour < 9 ? '翌' : '');
   return `${prefix}${hour}:${min}`;
 }
 
@@ -17,9 +19,11 @@ export function getTimeSlotLabel(date) {
 }
 
 export function getDayWindow(nowJST) {
-  const str = nowJST.toISOString().slice(0, 10);
-  const dayStart = new Date(`${str}T09:00:00+09:00`);
-  return { dayStart, dayEnd: new Date(dayStart.getTime() + 24 * 60 * 60 * 1000) };
+  const refDateStr = nowJST.toISOString().slice(0, 10);
+  const realNow = new Date(nowJST.getTime() - 9 * 60 * 60 * 1000);
+  const dayStart = new Date(realNow.getTime() - 2 * 60 * 60 * 1000);
+  const dayEnd = new Date(realNow.getTime() + 48 * 60 * 60 * 1000);
+  return { dayStart, dayEnd, refDateStr };
 }
 
 export async function fetchSchedule() {

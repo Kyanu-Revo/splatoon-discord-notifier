@@ -7,7 +7,7 @@ if (!fest) { console.log('フェス設定なし'); process.exit(0); }
 
 const now = new Date();
 const nowJST = toJSTDate(now);
-const { dayStart, dayEnd } = getDayWindow(nowJST);
+const { dayStart, dayEnd, refDateStr } = getDayWindow(nowJST);
 
 const schedule = await fetchSchedule();
 
@@ -42,23 +42,23 @@ const todayLabel = nowJST.toLocaleDateString('ja-JP', {
 
 const descLines = [todayLabel, ''];
 for (const e of challengeEntries) {
-  descLines.push(`${formatTimeJST(e.startTime)}〜 チャレンジ`);
+  descLines.push(`${formatTimeJST(e.startTime, refDateStr)}〜 チャレンジ`);
   descLines.push(e.stages);
   descLines.push('');
 }
 for (const e of openEntries) {
-  descLines.push(`${formatTimeJST(e.startTime)}〜 オープン`);
+  descLines.push(`${formatTimeJST(e.startTime, refDateStr)}〜 オープン`);
   descLines.push(e.stages);
   descLines.push('');
 }
 for (const e of tricolorEntries) {
-  descLines.push(`${formatTimeJST(e.startTime)}〜 トリカラバトル`);
+  descLines.push(`${formatTimeJST(e.startTime, refDateStr)}〜 トリカラバトル`);
   descLines.push(`🌈 ${e.stages}`);
   descLines.push('');
 }
 
 const newId = await sendEmbed(fest.webhook, {
-  content: [fest.role, '本日のフェスマッチスケジュール'].filter(Boolean).join('\n'),
+  content: [fest.role, '今後のフェスマッチスケジュール'].filter(Boolean).join('\n'),
   embeds: [{
     description: descLines.join('\n').trimEnd(),
     color: 0x6E5FBA,

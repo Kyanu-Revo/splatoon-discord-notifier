@@ -1,4 +1,4 @@
-import { clearChannelBefore } from './utils.mjs';
+import { clearChannelBefore, toJSTDate, formatTimeJST, getDayWindow } from './utils.mjs';
 
 const API_URL = 'https://spla3.yuu26.com/api/x/schedule';
 const config = JSON.parse(process.env.DISCORD_CONFIG);
@@ -24,18 +24,6 @@ const RULE_EMOJI_ID = {
   'ガチホコバトル': '1504326737780015196',
   'ガチアサリ':    '1504326606758481931',
 };
-
-function toJSTDate(date) {
-  return new Date(date.getTime() + 9 * 60 * 60 * 1000);
-}
-
-function formatTimeJST(date) {
-  const jst = toJSTDate(date);
-  const hour = jst.getUTCHours();
-  const min = String(jst.getUTCMinutes()).padStart(2, '0');
-  const prefix = hour < 9 ? '翌' : '';
-  return `${prefix}${hour}:${min}`;
-}
 
 function toDisplayName(name) {
   return name.replace('ガチホコバトル', 'ガチホコ');
@@ -70,11 +58,7 @@ const res = await fetch(API_URL, { headers: { 'user-agent': 'splatoon-discord-no
 const data = await res.json();
 const now = new Date();
 const nowJST = toJSTDate(now);
-
-// 今日9:00 JST〜翌日9:00 JST
-const jstDateStr = nowJST.toISOString().slice(0, 10);
-const dayStart = new Date(`${jstDateStr}T09:00:00+09:00`);
-const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+const { dayStart, dayEnd, refDateStr } = getDayWindow(nowJST);
 
 const todayLabel = nowJST.toLocaleDateString('ja-JP', {
   timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short',
@@ -109,13 +93,13 @@ allEntries.sort((a, b) => a.startTime - b.startTime || VALID_RULES.indexOf(a.rul
 
 const descLines = [todayLabel, ''];
 for (const e of allEntries) {
-  descLines.push(`${formatTimeJST(e.startTime)}〜 ${toDisplayName(e.rule)}`);
+  descLines.push(`${formatTimeJST(e.startTime, refDateStr)}〜 ${toDisplayName(e.rule)}`);
   descLines.push(`${RULE_EMOJI[e.rule]} ${e.name}`);
   descLines.push('');
 }
 
 const dailyId = await sendToDiscord(config.daily.webhook, {
-  content: [config.daily.role, '本日のXマッチスケジュール'].filter(Boolean).join('\n'),
+  content: [config.daily.role, '今後のXマッチスケジュール'].filter(Boolean).join('\n'),
   embeds: [{
     description: descLines.join('\n').trimEnd(),
     color: 0x19D719,
@@ -131,14 +115,14 @@ for (const rule of VALID_RULES) {
   if (!modeConfig || entries.length === 0) continue;
 
   const fields = entries.map(e => ({
-    name: `${formatTimeJST(e.startTime)}〜`,
+    name: `${formatTimeJST(e.startTime, refDateStr)}〜`,
     value: e.name,
     inline: true,
   }));
   if (fields.length % 2 !== 0) fields.push({ name: '​', value: '​', inline: true });
 
   const modeId = await sendToDiscord(modeConfig.webhook, {
-    content: [modeConfig.fixedRole, `本日の${toDisplayName(rule)}スケジュール`].filter(Boolean).join('\n'),
+    content: [modeConfig.fixedRole, `今後の${toDisplayName(rule)}スケジュール`].filter(Boolean).join('\n'),
     embeds: [{
       description: `${todayLabel}`,
       color: RULE_COLORS[rule],

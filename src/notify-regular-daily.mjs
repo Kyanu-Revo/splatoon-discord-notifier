@@ -7,7 +7,7 @@ if (!regular) { console.log('ナワバリ設定なし'); process.exit(0); }
 
 const now = new Date();
 const nowJST = toJSTDate(now);
-const { dayStart, dayEnd } = getDayWindow(nowJST);
+const { dayStart, dayEnd, refDateStr } = getDayWindow(nowJST);
 const todayLabel = nowJST.toLocaleDateString('ja-JP', {
   timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short',
 });
@@ -22,13 +22,13 @@ const entries = schedule.regular
 
 const descLines = [todayLabel, ''];
 for (const e of entries) {
-  descLines.push(`**${formatTimeJST(e.startTime)}〜**`);
+  descLines.push(`**${formatTimeJST(e.startTime, refDateStr)}〜**`);
   descLines.push(e.stages);
   descLines.push('');
 }
 
 const newId = await sendEmbed(regular.webhook, {
-  content: [regular.fixedRole, '本日のレギュラーマッチスケジュール'].filter(Boolean).join('\n'),
+  content: [regular.fixedRole, '今後のレギュラーマッチスケジュール'].filter(Boolean).join('\n'),
   embeds: [{
     description: descLines.join('\n').trimEnd(),
     color: 0x00C954,

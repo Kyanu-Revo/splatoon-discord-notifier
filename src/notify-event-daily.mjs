@@ -7,7 +7,7 @@ if (!event) { console.log('イベント設定なし'); process.exit(0); }
 
 const now = new Date();
 const nowJST = toJSTDate(now);
-const { dayStart, dayEnd } = getDayWindow(nowJST);
+const { dayStart, dayEnd, refDateStr } = getDayWindow(nowJST);
 const todayLabel = nowJST.toLocaleDateString('ja-JP', {
   timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short',
 });
@@ -30,13 +30,13 @@ const eventDesc = entries[0].eventDesc;
 
 const descLines = [todayLabel, '', `**${eventName}**`, eventDesc, ''];
 for (const e of entries) {
-  descLines.push(`${formatTimeJST(e.startTime)}〜 ${e.rule}`);
+  descLines.push(`${formatTimeJST(e.startTime, refDateStr)}〜 ${e.rule}`);
   descLines.push(e.stages);
   descLines.push('');
 }
 
 const newId = await sendEmbed(event.webhook, {
-  content: [event.fixedRole, '本日のイベントマッチスケジュール'].filter(Boolean).join('\n'),
+  content: [event.fixedRole, '今後のイベントマッチスケジュール'].filter(Boolean).join('\n'),
   embeds: [{
     description: descLines.join('\n').trimEnd(),
     color: 0xFF4F8A,

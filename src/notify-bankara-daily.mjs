@@ -14,7 +14,7 @@ const RULE_EMOJI = {
 
 const now = new Date();
 const nowJST = toJSTDate(now);
-const { dayStart, dayEnd } = getDayWindow(nowJST);
+const { dayStart, dayEnd, refDateStr } = getDayWindow(nowJST);
 const todayLabel = nowJST.toLocaleDateString('ja-JP', {
   timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short',
 });
@@ -41,14 +41,14 @@ for (const t of times) {
   const c = challengeMap[t];
   const o = openMap[t];
   const startTime = (c || o).startTime;
-  descLines.push(`**${formatTimeJST(startTime)}〜**`);
+  descLines.push(`**${formatTimeJST(startTime, refDateStr)}〜**`);
   if (c) descLines.push(`${RULE_EMOJI[c.rule] || ''} チャレンジ`, c.stages);
   if (o) descLines.push(`${RULE_EMOJI[o.rule] || ''} オープン`, o.stages);
   descLines.push('');
 }
 
 const newId = await sendEmbed(bankara.webhook, {
-  content: [bankara.fixedRole, '本日のバンカラマッチスケジュール'].filter(Boolean).join('\n'),
+  content: [bankara.fixedRole, '今後のバンカラマッチスケジュール'].filter(Boolean).join('\n'),
   embeds: [{
     description: descLines.join('\n').trimEnd(),
     color: 0xFF1900,
