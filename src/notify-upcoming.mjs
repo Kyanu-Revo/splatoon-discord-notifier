@@ -76,7 +76,7 @@ if (!modeConfig) {
 
 const timeLabel = getTimeSlotLabel(upcoming.startTime);
 const timeRole = modeConfig.timeRoles[timeLabel] || '';
-const mentions = [modeConfig.fixedRole, timeRole].filter(Boolean).join(' ');
+const mentions = timeRole;
 
 console.log(`通知: ${upcoming.name} (${timeLabel})`);
 const content = `${mentions}\nもうすぐ ${toDisplayName(upcoming.name)} の時間です！`;

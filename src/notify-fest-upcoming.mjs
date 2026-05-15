@@ -34,8 +34,7 @@ if (!nextOpen && !nextChallenge && !nextTricolor) {
   process.exit(0);
 }
 
-const mentions = fest.role || '';
-const lines = [mentions];
+const lines = [];
 
 if (nextChallenge || nextOpen) {
   lines.push('次のフェスマッチのステージ');

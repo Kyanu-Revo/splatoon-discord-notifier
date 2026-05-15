@@ -18,11 +18,9 @@ const next = schedule.event
 if (!next) { console.log('通知対象なし'); process.exit(0); }
 
 const timeLabel = getTimeSlotLabel(next.startTime);
-const timeRole = event.timeRoles?.[timeLabel] || '';
-const mentions = [event.fixedRole, timeRole].filter(Boolean).join(' ');
 const stages = `${next.stages[0].name} / ${next.stages[1].name}`;
 
-const content = [mentions, `次の「${next.eventName}」のステージ`, `${next.rule}　${stages}`].filter(Boolean).join('\n');
+const content = [`次の「${next.eventName}」のステージ`, `${next.rule}　${stages}`].join('\n');
 
 console.log(`通知: イベントマッチ ${next.eventName} (${timeLabel})`);
 await sendEmbed(event.webhook, { content });

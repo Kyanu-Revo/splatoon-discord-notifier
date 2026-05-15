@@ -20,15 +20,12 @@ if (!next) { console.log('通知対象なし'); process.exit(0); }
 const openEntry = schedule.bankara_open.find(e => new Date(e.start_time).getTime() === next.startTime.getTime());
 
 const timeLabel = getTimeSlotLabel(next.startTime);
-const timeRole = bankara.timeRoles?.[timeLabel] || '';
-const mentions = [bankara.fixedRole, timeRole].filter(Boolean).join(' ');
 
 const challengeStages = `${next.stages[0].name} / ${next.stages[1].name}`;
 const openStages = openEntry?.stages?.length >= 2 ? `${openEntry.stages[0].name} / ${openEntry.stages[1].name}` : '不明';
 const openRule = openEntry?.rule?.name || '不明';
 
 const content = [
-  mentions,
   `次のバンカラマッチのステージ`,
   `チャレンジ: ${next.rule}　${challengeStages}`,
   `オープン: ${openRule}　${openStages}`,

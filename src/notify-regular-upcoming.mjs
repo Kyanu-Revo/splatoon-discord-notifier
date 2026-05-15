@@ -18,11 +18,9 @@ const next = schedule.regular
 if (!next) { console.log('通知対象なし'); process.exit(0); }
 
 const timeLabel = getTimeSlotLabel(next.startTime);
-const timeRole = regular.timeRoles?.[timeLabel] || '';
-const mentions = [regular.fixedRole, timeRole].filter(Boolean).join(' ');
 const stages = `${next.stages[0].name} / ${next.stages[1].name}`;
 
-const content = [mentions, `次のレギュラーマッチのステージ`, stages].filter(Boolean).join('\n');
+const content = [`次のレギュラーマッチのステージ`, stages].join('\n');
 
 console.log(`通知: ナワバリ (${timeLabel})`);
 await sendEmbed(regular.webhook, { content });
