@@ -42,11 +42,19 @@ export async function fetchCoopSchedule() {
 
 export async function sendEmbed(webhookUrl, payload) {
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const res = await fetch(webhookUrl + '?wait=true', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    let res;
+    try {
+      res = await fetch(webhookUrl + '?wait=true', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.log(`通信エラー (試行${attempt}/3): ${err.message}`);
+      if (attempt === 3) throw err;
+      await new Promise(r => setTimeout(r, attempt * 5000));
+      continue;
+    }
     if (res.ok) {
       const { id } = await res.json();
       console.log(`送信成功: ${webhookUrl.slice(0, 60)}...`);
